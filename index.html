@@ -39,22 +39,6 @@
       cursor: crosshair;
     }
 
-    /* ── Scanline overlay ── */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0,0,0,0.08) 2px,
-        rgba(0,0,0,0.08) 4px
-      );
-      pointer-events: none;
-      z-index: 9999;
-    }
-
     /* ── Noise texture ── */
     body::after {
       content: '';
@@ -410,7 +394,7 @@
         e.g. src="demo/index.html"
         ════════════════════════════════════════════════
       -->
-      <iframe src="" title="And This Game Hates You Back — Demo" allowfullscreen></iframe>
+      <iframe src="ATGHYB_HTML_DEMO/index.html" title="And This Game Hates You Back — Demo" allowfullscreen></iframe>
 
       <!-- This placeholder disappears once you add a src to the iframe above -->
       <div class="demo-placeholder">
