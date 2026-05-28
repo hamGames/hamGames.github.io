@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>And This Game Hates You Back</title>
+  <style>
+    @font-face {
+      font-family: 'Ithaca';
+      src: url('Ithaca.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --black: #000000;
+      --white: #ffffff;
+      --red: #cc0000;
+      --red-bright: #ff2222;
+      --grey: #1a1a1a;
+      --font: 'Ithaca', 'Courier New', monospace;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--black);
+      color: var(--white);
+      font-family: var(--font);
+      overflow-x: hidden;
+      cursor: crosshair;
+    }
+
+    /* ── Scanline overlay ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.08) 2px,
+        rgba(0,0,0,0.08) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ── Noise texture ── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9998;
+      opacity: 0.4;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      padding: clamp(2rem, 8vw, 8rem);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-bg-text {
+      position: absolute;
+      top: 50%;
+      right: -2rem;
+      transform: translateY(-50%);
+      font-size: clamp(6rem, 20vw, 22rem);
+      color: rgba(255,255,255,0.03);
+      white-space: nowrap;
+      pointer-events: none;
+      letter-spacing: -0.02em;
+      user-select: none;
+    }
+
+    .tag {
+      font-size: clamp(0.6rem, 1.2vw, 0.85rem);
+      color: var(--red);
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      animation: blink 1.2s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    .hero-title {
+      font-size: clamp(2.2rem, 7vw, 7rem);
+      line-height: 1;
+      letter-spacing: -0.02em;
+      max-width: 14ch;
+      margin-bottom: 2rem;
+    }
+
+    .hero-title span {
+      color: var(--red);
+    }
+
+    .hero-desc {
+      font-size: clamp(0.75rem, 1.5vw, 1rem);
+      line-height: 1.8;
+      max-width: 48ch;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 3rem;
+      letter-spacing: 0.05em;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 0.75rem 1.75rem;
+      font-family: var(--font);
+      font-size: clamp(0.65rem, 1.2vw, 0.85rem);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: all 0.1s;
+      position: relative;
+    }
+
+    .btn-primary {
+      background: var(--white);
+      color: var(--black);
+    }
+
+    .btn-primary:hover {
+      background: var(--red);
+      color: var(--white);
+      transform: translate(-2px, -2px);
+      box-shadow: 4px 4px 0 var(--white);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--white);
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--red);
+      color: var(--red);
+      transform: translate(-2px, -2px);
+      box-shadow: 4px 4px 0 var(--red);
+    }
+
+    /* blood drip divider */
+    .drip-divider {
+      width: 100%;
+      height: 3px;
+      background: var(--red);
+      position: relative;
+      margin: 0;
+    }
+
+    .drip-divider::after {
+      content: '';
+      position: absolute;
+      left: clamp(2rem, 8vw, 8rem);
+      top: 0;
+      width: 3px;
+      height: clamp(20px, 5vw, 60px);
+      background: var(--red);
+    }
+
+    /* ── DEMO SECTION ── */
+    .demo-section {
+      padding: clamp(3rem, 8vw, 8rem);
+      padding-top: clamp(4rem, 10vw, 10rem);
+    }
+
+    .section-label {
+      font-size: clamp(0.6rem, 1vw, 0.75rem);
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+      font-size: clamp(1.5rem, 4vw, 3rem);
+      margin-bottom: 2.5rem;
+      letter-spacing: -0.01em;
+    }
+
+    .demo-wrapper {
+      width: 100%;
+      max-width: 960px;
+      aspect-ratio: 16/9;
+      background: var(--grey);
+      border: 1px solid rgba(255,255,255,0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ── DROP YOUR IFRAME HERE ── */
+    .demo-wrapper iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+
+    /* placeholder shown when no iframe src is set */
+    .demo-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      color: rgba(255,255,255,0.2);
+      font-size: clamp(0.7rem, 1.5vw, 1rem);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+
+    .demo-placeholder .placeholder-icon {
+      font-size: 3rem;
+      color: var(--red);
+      opacity: 0.4;
+    }
+
+    /* ── ABOUT SECTION ── */
+    .about-section {
+      padding: clamp(3rem, 8vw, 8rem);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(2rem, 6vw, 6rem);
+      align-items: start;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    @media (max-width: 700px) {
+      .about-section {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .about-body {
+      font-size: clamp(0.75rem, 1.4vw, 0.95rem);
+      line-height: 2;
+      color: rgba(255,255,255,0.65);
+      letter-spacing: 0.04em;
+    }
+
+    .about-body p + p {
+      margin-top: 1.2em;
+    }
+
+    .about-body strong {
+      color: var(--white);
+    }
+
+    .feature-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .feature-list li {
+      font-size: clamp(0.7rem, 1.3vw, 0.9rem);
+      letter-spacing: 0.08em;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      color: rgba(255,255,255,0.75);
+      line-height: 1.6;
+    }
+
+    .feature-list li::before {
+      content: '//';
+      color: var(--red);
+      flex-shrink: 0;
+      margin-top: 0.05em;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding: clamp(2rem, 4vw, 4rem) clamp(2rem, 8vw, 8rem);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    footer .footer-title {
+      font-size: clamp(0.65rem, 1vw, 0.8rem);
+      letter-spacing: 0.15em;
+      color: rgba(255,255,255,0.3);
+    }
+
+    footer .footer-links {
+      display: flex;
+      gap: 2rem;
+    }
+
+    footer a {
+      font-size: clamp(0.6rem, 1vw, 0.75rem);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    footer a:hover {
+      color: var(--red);
+    }
+
+    /* ── pixel blood splat cursor trail ── */
+    .splat {
+      position: fixed;
+      width: 6px;
+      height: 6px;
+      background: var(--red);
+      pointer-events: none;
+      z-index: 9997;
+      animation: splat-fade 0.6s forwards;
+    }
+
+    @keyframes splat-fade {
+      0%   { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(3); }
+    }
+
+    /* ── page load animation ── */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(12px);
+      animation: fade-in 0.6s ease forwards;
+    }
+
+    .fade-in:nth-child(1) { animation-delay: 0.1s; }
+    .fade-in:nth-child(2) { animation-delay: 0.25s; }
+    .fade-in:nth-child(3) { animation-delay: 0.4s; }
+    .fade-in:nth-child(4) { animation-delay: 0.55s; }
+    .fade-in:nth-child(5) { animation-delay: 0.7s; }
+
+    @keyframes fade-in {
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── HERO ── -->
+  <section class="hero">
+    <div class="hero-bg-text">LILGUY</div>
+
+    <p class="tag fade-in">▶ A rage puzzle platformer</p>
+    <h1 class="hero-title fade-in">
+      And This Game <span>Hates</span> You Back
+    </h1>
+    <p class="hero-desc fade-in">
+      You're Lilguy. A 2kg cosmic god who cannot clear a basic spike trap.
+      The game knows. <strong>Unhelpful Bot</strong> knows. Even the sunfish knows.<br><br>
+      Die. Respawn. Get roasted. Repeat.
+    </p>
+    <div class="btn-row fade-in">
+      <a href="#demo" class="btn btn-primary">Play Free Demo</a>
+      <a href="https://itch.io" class="btn btn-secondary" target="_blank">Get Full Game — £2.99</a>
+    </div>
+  </section>
+
+  <div class="drip-divider"></div>
+
+  <!-- ── DEMO ── -->
+  <section class="demo-section" id="demo">
+    <p class="section-label">// Free Demo</p>
+    <h2 class="section-title">Try it. You won't last long.</h2>
+
+    <div class="demo-wrapper">
+      <!--
+        ════════════════════════════════════════════════
+        DROP YOUR WEBGL DEMO HERE
+        Replace the src below with your Unity WebGL build path.
+        e.g. src="demo/index.html"
+        ════════════════════════════════════════════════
+      -->
+      <iframe src="" title="And This Game Hates You Back — Demo" allowfullscreen></iframe>
+
+      <!-- This placeholder disappears once you add a src to the iframe above -->
+      <div class="demo-placeholder">
+        <span class="placeholder-icon">▶</span>
+        <span>Demo coming soon</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ABOUT ── -->
+  <section class="about-section">
+    <div>
+      <p class="section-label">// About</p>
+      <h2 class="section-title">The game that fights back.</h2>
+      <div class="about-body">
+        <p>
+          <strong>And This Game Hates You Back</strong> is a precision rage platformer where
+          the levels aren't just hard — they're personal. Navigate brutal spike-filled stages
+          as Lilguy, a 2 kilogram cosmic deity with the power to unmake the universe and
+          absolutely no idea how to use it.
+        </p>
+        <p>
+          Every death is accompanied by <strong>Unhelpful Bot</strong>, your AI companion
+          who exists solely to make you feel worse about yourself. He has a lot of material
+          to work with.
+        </p>
+        <p>
+          The free demo includes the first 5 levels. The full game is £2.99.
+          Good luck. You'll need it.
+        </p>
+      </div>
+    </div>
+
+    <ul class="feature-list">
+      <li>Brutal precision platforming designed to destroy you</li>
+      <li>Unhelpful Bot — an AI companion with zero sympathy</li>
+      <li>Goreless-but-gory death animations (Lilguy bleeds a lot)</li>
+      <li>Original chiptune soundtrack</li>
+      <li>5 free levels. Many more paid ones.</li>
+      <li>Mobile support because suffering is universal</li>
+    </ul>
+  </section>
+
+  <!-- ── FOOTER ── -->
+  <footer>
+    <span class="footer-title">AND THIS GAME HATES YOU BACK &nbsp;·&nbsp; © 2026</span>
+    <div class="footer-links">
+      <a href="https://itch.io" target="_blank">Itch.io</a>
+      <a href="https://gamejolt.com" target="_blank">GameJolt</a>
+    </div>
+  </footer>
+
+  <script>
+    // Blood splat cursor trail
+    document.addEventListener('click', (e) => {
+      for (let i = 0; i < 5; i++) {
+        const splat = document.createElement('div');
+        splat.className = 'splat';
+        splat.style.left = (e.clientX + (Math.random() - 0.5) * 20) + 'px';
+        splat.style.top  = (e.clientY + (Math.random() - 0.5) * 20) + 'px';
+        document.body.appendChild(splat);
+        setTimeout(() => splat.remove(), 600);
+      }
+    });
+
+    // Hide demo placeholder when iframe has a src
+    const iframe = document.querySelector('.demo-wrapper iframe');
+    const placeholder = document.querySelector('.demo-placeholder');
+    if (iframe && iframe.src && iframe.src !== window.location.href) {
+      placeholder.style.display = 'none';
+    }
+  </script>
+
+</body>
+</html>
